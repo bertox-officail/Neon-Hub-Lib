@@ -5,7 +5,19 @@ local LocalPlayer = game:GetService("Players").LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local HttpService = game:GetService("HttpService")
 
-local PARENT = (gethui and gethui()) or game:GetService('CoreGui')
+if getgenv().LEEN_DEBUG then
+	warn("[ DEBUG SCRIPT ]")
+
+	warn("Swift Function:", swift_internal_correct)
+	warn("Gethui Function:", gethui)
+	warn("Check:", swift_internal_correct and "Swift Issue" or gethui and "Normal" or game:GetService("CoreGui") and "Normal ²")
+
+	warn("[ DEBUG END ]")
+end
+
+local PARENT = swift_internal_correct and game:GetService("CoreGui")
+	or gethui and gethui()
+	or game:GetService("CoreGui")
 
 local OrionLib = {
 	Elements = {},
@@ -31,7 +43,7 @@ local OrionLib = {
 local Icons = {}
 
 local Success, Response = pcall(function()
-	Icons = HttpService:JSONDecode(game:HttpGetAsync("https://raw.githubusercontent.com/evoincorp/lucideblox/master/src/modules/util/icons.json")).icons
+	Icons = HttpService:JSONDecode(game:HttpGetAsync("https://raw.githubusercontent.com/frappedevs/lucideblox/refs/heads/master/src/modules/util/icons.json")).icons
 end)
 
 if not Success then
@@ -80,34 +92,34 @@ task.spawn(function()
 end)
 
 local function MakeDraggable(DragPoint, Main)
-	pcall(function()
-		local Dragging, DragInput, MousePos, FramePos = false
-		AddConnection(DragPoint.InputBegan, function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-				Dragging = true
-				MousePos = Input.Position
-				FramePos = Main.Position
+	--pcall(function()
+	local Dragging, DragInput, MousePos, FramePos = false
+	AddConnection(DragPoint.InputBegan, function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+			Dragging = true
+			MousePos = Input.Position
+			FramePos = Main.Position
 
-				Input.Changed:Connect(function()
-					if Input.UserInputState == Enum.UserInputState.End then
-						Dragging = false
-					end
-				end)
-			end
-		end)
-		AddConnection(DragPoint.InputChanged, function(Input)
-			if Input.UserInputType == Enum.UserInputType.MouseMovement then
-				DragInput = Input
-			end
-		end)
-		AddConnection(UserInputService.InputChanged, function(Input)
-			if Input == DragInput and Dragging then
-				local Delta = Input.Position - MousePos
-				--TweenService:Create(Main, TweenInfo.new(0.05, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position  = UDim2.new(FramePos.X.Scale,FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)}):Play()
-				Main.Position  = UDim2.new(FramePos.X.Scale,FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
-			end
-		end)
+			Input.Changed:Connect(function()
+				if Input.UserInputState == Enum.UserInputState.End then
+					Dragging = false
+				end
+			end)
+		end
 	end)
+	AddConnection(DragPoint.InputChanged, function(Input)
+		if Input.UserInputType == Enum.UserInputType.MouseMovement then
+			DragInput = Input
+		end
+	end)
+	AddConnection(UserInputService.InputChanged, function(Input)
+		if Input == DragInput and Dragging then
+			local Delta = Input.Position - MousePos
+			--TweenService:Create(Main, TweenInfo.new(0.05, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Position  = UDim2.new(FramePos.X.Scale,FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)}):Play()
+			Main.Position  = UDim2.new(FramePos.X.Scale,FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
+		end
+	end)
+	--end)
 end    
 
 local function Create(Name, Properties, Children)
@@ -247,7 +259,10 @@ local function SaveCfg(Name)
 			end
 		end	
 	end
-	writefile(OrionLib.Folder .. "/" .. Name .. ".txt", tostring(HttpService:JSONEncode(Data)))
+
+	if writefile then
+		writefile(OrionLib.Folder .. "/" .. Name .. ".txt", tostring(HttpService:JSONEncode(Data)))
+	end
 end
 
 local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3}
@@ -398,7 +413,7 @@ function OrionLib:MakeNotification(NotificationConfig)
 	spawn(function()
 		NotificationConfig.Name = NotificationConfig.Name or "Notification"
 		NotificationConfig.Content = NotificationConfig.Content or "Test"
-		NotificationConfig.Image = NotificationConfig.Image or "rbxassetid://17464790727"
+		NotificationConfig.Image = NotificationConfig.Image or "rbxassetid://14229447778"
 		NotificationConfig.Time = NotificationConfig.Time or 15
 
 		local NotificationParent = SetProps(MakeElement("TFrame"), {
@@ -432,6 +447,7 @@ function OrionLib:MakeNotification(NotificationConfig)
 				Position = UDim2.new(0, 0, 0, 25),
 				Font = Enum.Font.GothamSemibold,
 				Name = "Content",
+				RichText = true,
 				AutomaticSize = Enum.AutomaticSize.Y,
 				TextColor3 = Color3.fromRGB(200, 200, 200),
 				TextWrapped = true
@@ -456,7 +472,7 @@ function OrionLib:MakeNotification(NotificationConfig)
 end    
 
 function OrionLib:Init()
-	if OrionLib.SaveCfg then	
+	if OrionLib.SaveCfg and (isfile and readfile) then	
 		pcall(function()
 			if isfile(OrionLib.Folder .. "/" .. game.GameId .. ".txt") then
 				LoadCfg(readfile(OrionLib.Folder .. "/" .. game.GameId .. ".txt"))
@@ -477,24 +493,24 @@ function OrionLib:MakeWindow(WindowConfig)
 	local UIHidden = false
 
 	WindowConfig = WindowConfig or {}
-	WindowConfig.Name = WindowConfig.Name or "Neon Hub"
+	WindowConfig.Name = WindowConfig.Name or "NeonStudio"
 	WindowConfig.ConfigFolder = WindowConfig.ConfigFolder or WindowConfig.Name
 	WindowConfig.SaveConfig = WindowConfig.SaveConfig or false
 	WindowConfig.HidePremium = WindowConfig.HidePremium or false
 	if WindowConfig.IntroEnabled == nil then
 		WindowConfig.IntroEnabled = true
 	end
-	WindowConfig.IntroText = WindowConfig.IntroText or "Neon Hub"
+	WindowConfig.IntroText = WindowConfig.IntroText or "Neon Studio"
 	WindowConfig.CloseCallback = WindowConfig.CloseCallback or function() end
 	WindowConfig.ShowIcon = WindowConfig.ShowIcon or false
-	WindowConfig.Icon = WindowConfig.Icon or "rbxassetid://17464790727"
-	WindowConfig.IntroIcon = WindowConfig.IntroIcon or "rbxassetid://17464790727"
+	WindowConfig.Icon = WindowConfig.Icon or "rbxassetid://104653968528576"
+	WindowConfig.IntroIcon = WindowConfig.IntroIcon or "rbxassetid://104653968528576"
 	WindowConfig.SearchBar = WindowConfig.SearchBar or nil
 	OrionLib.Folder = WindowConfig.ConfigFolder
 	OrionLib.SaveCfg = WindowConfig.SaveConfig
 
 	if WindowConfig.SaveConfig then
-		if not isfolder(WindowConfig.ConfigFolder) then
+		if (isfolder and makefolder) and not isfolder(WindowConfig.ConfigFolder) then
 			makefolder(WindowConfig.ConfigFolder)
 		end	
 	end
@@ -699,20 +715,46 @@ function OrionLib:MakeWindow(WindowConfig)
 
 	MakeDraggable(DragPoint, MainWindow)
 
+	-- @ UI Visible & Mobile Icon Handle (Zv-yz/github);
+	local _currentKey = Enum.KeyCode.RightShift;
+	local isMobile = table.find({ Enum.Platform.IOS, Enum.Platform.Android }, UserInputService:GetPlatform());
+	local MobileIcon = SetChildren(SetProps(MakeElement("ImageButton", "http://www.roblox.com/asset/?id=72792666168943"), {
+		Position = UDim2.new(0.25, 0, 0.1, 0);
+		Size = UDim2.new(0, 32, 0, 33);
+		-- Position = UDim2.new(0.52, 0, 0, 0);
+		-- Size = UDim2.new(0.045, 0, 0.089, 0);
+		-- Draggable = true;
+		Parent = Orion;
+		Visible = false;
+	}), { MakeElement("Corner", 1, 0) });
+
+	MakeDraggable(MobileIcon, MobileIcon)
+
+	AddConnection(MobileIcon.MouseButton1Click, function()
+		MainWindow.Visible = true;
+		MobileIcon.Visible = false;
+	end)
+
 	AddConnection(CloseBtn.MouseButton1Up, function()
 		MainWindow.Visible = false
 		UIHidden = true
+
+		if UserInputService.TouchEnabled then
+			MobileIcon.Visible = true;
+		end
+
 		OrionLib:MakeNotification({
-			Name = "Neon Hub",
-			Content = "Execute Neon Script!",
+			Name = "Interface fechada",
+			Content = (isMobile and 'Clique na <b>Icon' or 'Pressione a tecla <b>' .. _currentKey.Name) .. "</b> para abrir a GUI novamente!",
 			Time = 5
 		})
 		WindowConfig.CloseCallback()
 	end)
 
 	AddConnection(UserInputService.InputBegan, function(Input)
-		if Input.KeyCode == Enum.KeyCode.RightShift and UIHidden then
-			MainWindow.Visible = true
+		if Input.KeyCode == _currentKey then
+			MobileIcon.Visible = false; -- Ja que ele usou Teclado, creio que precisa esconder icone de mobile. 
+			MainWindow.Visible = not MainWindow.Visible;
 		end
 	end)
 
@@ -771,10 +813,11 @@ function OrionLib:MakeWindow(WindowConfig)
 
 	if WindowConfig.IntroEnabled then
 		LoadSequence()
-	end	
+	end
 
-	local TabFunction = {}
-	function TabFunction:MakeTab(TabConfig)
+	local Functions = {}
+
+	function Functions:MakeTab(TabConfig)
 		TabConfig = TabConfig or {}
 		TabConfig.Name = TabConfig.Name or "Tab"
 		TabConfig.Icon = TabConfig.Icon or ""
@@ -850,6 +893,31 @@ function OrionLib:MakeWindow(WindowConfig)
 
 		local function GetElements(ItemParent)
 			local ElementFunction = {}
+			function ElementFunction:AddLog(Text)
+				local Label = MakeElement("Label", Text, 15)
+				local LogFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+					Size = UDim2.new(1, 0, 1, 0),
+					BackgroundTransparency = 0.7,
+					Parent = ItemParent
+				}), {
+					AddThemeObject(SetProps(Label, {
+						Size = UDim2.new(1, -12, 1, 0),
+						Position = UDim2.new(0, 12, 0, 0),
+						TextXAlignment = Enum.TextXAlignment.Center,
+						TextSize = 19,
+						TextWrapped = true,
+						Font = Enum.Font.GothamBold,
+						Name = "Content"
+					}), "Text"),
+					AddThemeObject(MakeElement("Stroke"), "Stroke")
+				}), "Second")
+
+				local LogFunction = {}
+				function LogFunction:Set(ToChange)
+					LogFrame.Content.Text = ToChange
+				end
+				return LogFunction
+			end
 			function ElementFunction:AddLabel(Text)
 				local LabelFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
 					Size = UDim2.new(1, 0, 0, 30),
@@ -1360,7 +1428,7 @@ function OrionLib:MakeWindow(WindowConfig)
 							Holding = true
 							BindConfig.Callback(Holding)
 						else
-							BindConfig.Callback()
+							BindConfig.Callback(Input)
 						end
 					elseif Bind.Binding then
 						local Key
@@ -1765,7 +1833,19 @@ function OrionLib:MakeWindow(WindowConfig)
 		return ElementFunction   
 	end
 
-	return TabFunction
+	function Functions:ChangeKey(Keybind: Enum.KeyCode)
+		_currentKey = Keybind;
+	end;
+
+	function Functions:Destroy()
+		for _, Connection in next, OrionLib.Connections do
+			Connection:Disconnect()
+		end
+		MainWindow:Destroy()
+		MobileIcon:Destroy()
+	end
+
+	return Functions;
 end   
 
 function OrionLib:Destroy()
